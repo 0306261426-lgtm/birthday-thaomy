@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<title>Happy Birthday Thảo My 💖</title>
+<style>
+:root{
+  --card-radius:28px;
+  --bg1:#6525a8; --bg2:#160d39;
+}
+html,body{height:100%}
+*{box-sizing:border-box}
+html{ -webkit-text-size-adjust:100%; }
+body{
+ margin:0;
+ min-height:100vh;
+ overflow-x:hidden;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ font-family:Arial,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+ color:white;text-align:center;
+ background:radial-gradient(circle at top,var(--bg1),var(--bg2) 70%);
+ padding-top:env(safe-area-inset-top);
+ padding-bottom:env(safe-area-inset-bottom);
+ -webkit-font-smoothing:antialiased;
+ -moz-osx-font-smoothing:grayscale;
+}
+canvas{position:fixed;inset:0;pointer-events:none;z-index:0}
+.card{
+ position:relative;z-index:1;width:92%;max-width:440px;
+ padding:calc(18px + env(safe-area-inset-top)) 18px 22px;
+ margin:18px 0;border-radius:var(--card-radius);
+ background:rgba(255,255,255,0.07);
+ border:1px solid rgba(255,185,248,0.5);
+ box-shadow:0 0 35px rgba(237,101,255,0.32);
+ backdrop-filter:blur(8px);
+ -webkit-backdrop-filter:blur(8px);
+}
+h1{font-size:clamp(27px,8vw,38px);color:#ffe4fa;
+ text-shadow:0 0 15px #ff36d0;margin:6px 0}
+.name{font-size:clamp(36px,10vw,52px);font-weight:700;
+ color:#ff9de9;text-shadow:0 0 20px #ff36c7;
+ animation:glow 2s infinite alternate;margin:6px 0}
+.cake{font-size:86px;animation:bounce 1.5s infinite;margin:6px 0}
+p{line-height:1.6;font-size:16px;margin:10px 0}
+button, .gift-btn{
+ border:0;border-radius:30px;padding:14px 22px;margin:7px;
+ color:white;font-size:16px;font-weight:700;
+ background:linear-gradient(90deg,#ff4fa3,#a64dff);
+ box-shadow:0 0 18px #ff65d7;cursor:pointer;
+ -webkit-tap-highlight-color: transparent;
+ touch-action:manipulation;
+}
+#letter{display:none;margin-top:20px;line-height:1.8;
+ animation:appear 360ms ease-out}
+#gift{font-size:70px;cursor:pointer;display:inline-block;
+ animation:bounce 1.3s infinite; user-select:none; touch-action:manipulation}
+.hint{font-size:13px;color:#ffd8fa;margin-top:4px}
+.heart{
+ position:fixed;bottom:-40px;z-index:0;
+ pointer-events:none;
+ will-change:transform,opacity;
+ transform:translate3d(0,0,0);
+}
+@keyframes bounce{50%{transform:translateY(-10px) rotate(2deg)}}
+@keyframes glow{to{text-shadow:0 0 30px #ff31ce;color:white}}
+@keyframes appear{from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none}}
+[role="button"]:focus{outline:3px solid rgba(255,255,255,0.12); outline-offset:3px}
+@media (prefers-reduced-motion: reduce){
+  .cake, .name, #gift, .heart { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<div class="card" role="region" aria-label="Thiệp chúc mừng sinh nhật Thảo My">
+ <h1>🎉 HAPPY BIRTHDAY 🎉</h1>
+ <div class="name">Thảo My 💗</div>
+ <p>Hôm nay là ngày đặc biệt của một cô gái đặc biệt! 🌷</p>
+
+ <div class="cake" aria-hidden="true">🎂</div>
+ <p>🎀 Một chiếc bánh dành riêng cho Thảo My 🎀</p>
+
+ <div id="gift" role="button" tabindex="0" aria-label="Mở quà" class="gift-btn">🎁</div>
+ <div class="hint">Chạm vào hộp quà để mở nha!</div>
+
+ <div id="letter" aria-live="polite">
+  <h2>💌 Thư gửi Thảo My</h2>
+  <p id="wish"></p>
+  <h2>💖 Chúc mừng sinh nhật 💖</h2>
+ </div>
+
+ <div style="margin-top:8px">
+  <button id="openBtn" class="gift-btn" aria-label="Mở quà bằng nút">💝 Mở quà đặc biệt</button>
+  <button id="fwBtn" class="gift-btn" aria-label="Bắn pháo hoa">🎆 Bắn pháo hoa</button>
+ </div>
+ <p id="status" style="margin-top:8px"></p>
+</div>
+
+<script>
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || matchMedia('(pointer:coarse)').matches;
+const DPR = Math.min(window.devicePixelRatio || 1, 3);
+const PARTICLES_PER_BURST = isMobile ? 28 : 65;
+const BURST_COUNT = isMobile ? 4 : 7;
+const HEART_INTERVAL = isMobile ? 650 : 350;
+
+const text = [
+ "Chúc Thảo My tuổi mới luôn xinh tươi, vui vẻ và hạnh phúc nhé! 🌸",
+ "Mong mọi ước mơ của bạn đều thành hiện thực, học giỏi và gặp thật nhiều may mắn. ✨",
+ "Chúc bạn luôn được yêu thương, luôn mỉm cười và có thật nhiều kỷ niệm đẹp bên những người bạn quý mến. 💕",
+ "Sinh nhật thật vui nha Thảo My! Mong tuổi mới của bạn sẽ rực rỡ như pháo hoa đêm nay! 🎂💗"
+];
+
+let opened=false;
+const giftEl = document.getElementById('gift');
+const openBtn = document.getElementById('openBtn');
+const fwBtn = document.getElementById('fwBtn');
+
+function playChime() {
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 880;
+    g.gain.value = 0.0001;
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.02);
+    o.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.12);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.0);
+    setTimeout(()=>{ try{o.stop(); ctx.close();}catch(e){} }, 1200);
+  }catch(e){}
+}
+
+function openGift(){
+  document.getElementById("letter").style.display="block";
+  giftEl.textContent="🎉🎁🎉";
+  if(!opened){ playChime(); }
+  if(opened){ fireworks(); return; }
+  opened=true;
+  let i=0;
+  function next(){
+    if(i<text.length){
+      document.getElementById("wish").innerHTML+=text[i]+"<br><br>";
+      i++;
+      setTimeout(next, isMobile ? 1400 : 1000);
+    } else {
+      document.getElementById("status").textContent=
+       "💗 Gửi ngàn lời chúc tốt đẹp nhất đến Thảo My! 💗";
+      fireworks();
+    }
+  }
+  next();
+}
+
+giftEl.addEventListener('keydown', e=>{
+  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openGift(); }
+});
+giftEl.addEventListener('click', openGift);
+openBtn.addEventListener('click', openGift);
+fwBtn.addEventListener('click', fireworks);
+giftEl.addEventListener('touchstart', function onTouchOpen(e){
+  openGift();
+}, {passive:true});
+
+const canvas = document.getElementById('fx');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas(){
+  const w = innerWidth;
+  const h = innerHeight;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = Math.round(w * DPR);
+  canvas.height = Math.round(h * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas, {passive:true});
+resizeCanvas();
+
+function fireworks(){
+  for(let n=0;n<BURST_COUNT;n++){
+    const x = Math.random()*innerWidth;
+    const y = Math.random()*innerHeight*0.65;
+    for(let i=0;i<PARTICLES_PER_BURST;i++){
+      const a = Math.random()*Math.PI*2;
+      const speed = (1 + Math.random()*4) * (isMobile ? 0.8 : 1);
+      particles.push({
+        x, y,
+        vx: Math.cos(a)*speed,
+        vy: Math.sin(a)*speed,
+        life: isMobile ? 50 + Math.random()*10 : 70 + Math.random()*20,
+        color: ["#ff72d2","#ffe66d","#9dfcff","#ffffff","#b58cff"][Math.floor(Math.random()*5)],
+        r: isMobile ? 1.6 : 2.6
+      });
+    }
+  }
+}
+
+let lastDraw = performance.now();
+function animate(now){
+  const dt = now - lastDraw;
+  lastDraw = now;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let i=0;i<particles.length;i++){
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.025 * (isMobile ? 0.9 : 1);
+    p.life--;
+    ctx.globalAlpha = Math.max(0, p.life / 70);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fill();
+  }
+  particles = particles.filter(p => p.life > 0);
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+function spawnHeart(){
+  const h = document.createElement('div');
+  h.className = 'heart';
+  h.textContent = ["💗","💖","💕","✨","🌸"][Math.floor(Math.random()*5)];
+  h.style.left = (Math.random()*90 + 2) + 'vw';
+  const size = 14 + Math.random()*28;
+  h.style.fontSize = size + 'px';
+  const dur = (4 + Math.random()*5) * (isMobile ? 1.1 : 1.0);
+  h.style.animation = `heartFloat ${dur}s linear forwards`;
+  h.style.transform = `translateY(0) rotate(${Math.random()*40-20}deg)`;
+  h.style.opacity = '1';
+  h.style.transition = `transform ${dur}s linear, opacity ${dur}s linear`;
+  document.body.appendChild(h);
+  requestAnimationFrame(()=>{
+    h.style.transform = `translateY(-${110 + Math.random()*30}vh) rotate(${Math.random()*720-360}deg)`;
+    h.style.opacity = '0';
+  });
+  setTimeout(()=>{ try{ h.remove(); } catch(e){} }, dur*1000 + 200);
+}
+setInterval(()=>{ spawnHeart(); }, HEART_INTERVAL);
+
+setTimeout(fireworks, 500);
+setTimeout(fireworks, 1800);
+
+if(matchMedia('(prefers-reduced-motion: reduce)').matches){
+  particles = [];
+}
+</script>
+</body>
+</html>
